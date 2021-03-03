@@ -46,12 +46,14 @@ func New(token, server string, handler HandlerFunc, opts *Options) *Agent {
 		panic("invalid skadi server address")
 	}
 	var timeout = 3 * time.Second
-	if opts.Timeout > 0 {
-		timeout = time.Duration(opts.Timeout) * time.Millisecond
-	}
 	var interval = time.Minute
-	if opts.Interval > 0 {
-		interval = time.Duration(opts.Interval) * time.Millisecond
+	if opts != nil {
+		if opts.Timeout > 0 {
+			timeout = time.Duration(opts.Timeout) * time.Millisecond
+		}
+		if opts.Interval > 0 {
+			interval = time.Duration(opts.Interval) * time.Millisecond
+		}
 	}
 	return &Agent{
 		base:   server,
