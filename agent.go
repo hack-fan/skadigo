@@ -1,6 +1,7 @@
 package skadigo
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -39,6 +40,7 @@ type Agent struct {
 	interval time.Duration
 }
 
+// New skadi agent instance, you can Start() it later.
 func New(token, server string, handler HandlerFunc, opts *Options) *Agent {
 	// check options
 	base, err := url.Parse(server)
@@ -108,7 +110,12 @@ func (a *Agent) pullJobAndRun() {
 }
 
 func (a *Agent) succeed(id, result string) {
-	req, err := http.NewRequest("PUT", a.base+"/agent/jobs/"+id+"/succeed", nil)
+	body, err := json.Marshal(&JobResult{result})
+	if err != nil {
+		// TODO: log error
+		return
+	}
+	req, err := http.NewRequest("PUT", a.base+"/agent/jobs/"+id+"/succeed", bytes.NewReader(body))
 	if err != nil {
 		// TODO: log error
 		return
@@ -125,7 +132,12 @@ func (a *Agent) succeed(id, result string) {
 }
 
 func (a *Agent) fail(id, result string) {
-	req, err := http.NewRequest("PUT", a.base+"/agent/jobs/"+id+"/fail", nil)
+	body, err := json.Marshal(&JobResult{result})
+	if err != nil {
+		// TODO: log error
+		return
+	}
+	req, err := http.NewRequest("PUT", a.base+"/agent/jobs/"+id+"/fail", bytes.NewReader(body))
 	if err != nil {
 		// TODO: log error
 		return
@@ -150,6 +162,7 @@ type roundTripper struct {
 // RoundTripper interface
 func (rt roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	r.Header.Add("Authorization", "Bearer "+rt.token)
+	r.Header.Add("Content-Type", "application/json")
 	return rt.r.RoundTrip(r)
 }
 
