@@ -3,11 +3,17 @@ package skadigo
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
 )
+
+// Logger can be logrus, zap, etc...
+type Logger interface {
+	Errorf(string, ...interface{})
+}
 
 // JobBasic is redefined the job struct for zero deps
 type JobBasic struct {
@@ -29,6 +35,8 @@ type Options struct {
 	Timeout int
 	// optional, job check interval milliseconds, 0 will be default 60000ms(60s)
 	Interval int
+	// can be many kind of logger, look up the def
+	Logger Logger
 }
 
 // Agent or client
@@ -38,6 +46,7 @@ type Agent struct {
 	handle   HandlerFunc
 	httpc    *http.Client
 	interval time.Duration
+	log      Logger
 }
 
 // New skadi agent instance, you can Start() it later.
@@ -49,6 +58,7 @@ func New(token, server string, handler HandlerFunc, opts *Options) *Agent {
 	}
 	var timeout = 3 * time.Second
 	var interval = time.Minute
+	var log Logger
 	if opts != nil {
 		if opts.Timeout > 0 {
 			timeout = time.Duration(opts.Timeout) * time.Millisecond
@@ -56,6 +66,12 @@ func New(token, server string, handler HandlerFunc, opts *Options) *Agent {
 		if opts.Interval > 0 {
 			interval = time.Duration(opts.Interval) * time.Millisecond
 		}
+		if opts.Logger != nil {
+			log = opts.Logger
+		}
+	}
+	if log == nil {
+		log = defaultLogger{}
 	}
 	return &Agent{
 		base:   server,
@@ -65,6 +81,7 @@ func New(token, server string, handler HandlerFunc, opts *Options) *Agent {
 			Timeout:   timeout,
 		},
 		interval: interval,
+		log:      log,
 	}
 }
 
@@ -92,19 +109,20 @@ func (a *Agent) pullJobAndRun() {
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		// TODO: log error
+		a.log.Errorf("read body failed when pull job: %s", err)
 		return
 	}
 	defer resp.Body.Close()
 	var job = new(JobBasic)
 	err = json.Unmarshal(body, job)
 	if err != nil {
-		// TODO: log error
+		a.log.Errorf("invalid body struct when pull job: %s", err)
 		return
 	}
 	result, err := a.handle(job.Message)
 	if err != nil {
 		a.fail(job.ID, result)
+		return
 	}
 	a.succeed(job.ID, result)
 }
@@ -112,21 +130,21 @@ func (a *Agent) pullJobAndRun() {
 func (a *Agent) succeed(id, result string) {
 	body, err := json.Marshal(&JobResult{result})
 	if err != nil {
-		// TODO: log error
+		a.log.Errorf("invalid result when report job succeeded: %s", err)
 		return
 	}
 	req, err := http.NewRequest("PUT", a.base+"/agent/jobs/"+id+"/succeed", bytes.NewReader(body))
 	if err != nil {
-		// TODO: log error
+		a.log.Errorf("invalid request when report job succeeded: %s", err)
 		return
 	}
 	resp, err := a.httpc.Do(req)
 	if err != nil {
-		// TODO: log error
+		a.log.Errorf("request failed when report job succeeded: %s", err)
 		return
 	}
 	if resp.StatusCode != 204 {
-		// TODO: log error
+		a.log.Errorf("request failed status when report job succeeded: %s", err)
 		return
 	}
 }
@@ -134,21 +152,21 @@ func (a *Agent) succeed(id, result string) {
 func (a *Agent) fail(id, result string) {
 	body, err := json.Marshal(&JobResult{result})
 	if err != nil {
-		// TODO: log error
+		a.log.Errorf("invalid result when report job failed: %s", err)
 		return
 	}
 	req, err := http.NewRequest("PUT", a.base+"/agent/jobs/"+id+"/fail", bytes.NewReader(body))
 	if err != nil {
-		// TODO: log error
+		a.log.Errorf("invalid request when report job failed: %s", err)
 		return
 	}
 	resp, err := a.httpc.Do(req)
 	if err != nil {
-		// TODO: log error
+		a.log.Errorf("request failed when report job failed: %s", err)
 		return
 	}
 	if resp.StatusCode != 204 {
-		// TODO: log error
+		a.log.Errorf("request failed status when report job failed: %s", err)
 		return
 	}
 }
@@ -171,4 +189,10 @@ func customRoundTripper(token string) http.RoundTripper {
 		token: token,
 		r:     http.DefaultTransport,
 	}
+}
+
+type defaultLogger struct{}
+
+func (defaultLogger) Errorf(format string, args ...interface{}) {
+	fmt.Printf(format, args...)
 }
