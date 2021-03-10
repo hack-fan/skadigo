@@ -96,23 +96,25 @@ func (a *Agent) Start() {
 func (a *Agent) pullJobAndRun() {
 	resp, err := a.httpc.Get(a.base + "/agent/job")
 	if err != nil {
-		// TODO: log error
+		a.log.Errorf("pull job failed: %s", err)
 		return
 	}
 	// no job
 	if resp.StatusCode == 204 {
 		return
 	}
-	if resp.StatusCode != 200 {
-		// log other errors
-		return
-	}
+	// other status
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		a.log.Errorf("read body failed when pull job: %s", err)
 		return
 	}
-	defer resp.Body.Close()
+	_ = resp.Body.Close()
+	if resp.StatusCode != 200 {
+		a.log.Errorf("unknown server error: %s %s", http.StatusText(resp.StatusCode), string(body))
+		return
+	}
+	// job got
 	var job = new(JobBasic)
 	err = json.Unmarshal(body, job)
 	if err != nil {
