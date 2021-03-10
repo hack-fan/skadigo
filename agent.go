@@ -123,7 +123,7 @@ func (a *Agent) pullJobAndRun() {
 	}
 	result, err := a.handle(job.Message)
 	if err != nil {
-		a.fail(job.ID, result)
+		a.fail(job.ID, err.Error())
 		return
 	}
 	a.succeed(job.ID, result)
