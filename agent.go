@@ -2,6 +2,7 @@ package skadigo
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -33,24 +34,21 @@ type HandlerFunc func(msg string) (string, error)
 type Options struct {
 	// optional, you can custom http client timeout milliseconds, default value is 3000ms(3s)
 	Timeout int
-	// optional, job check interval milliseconds, 0 will be default 60000ms(60s)
-	Interval int
 	// can be many kind of logger, look up the def
 	Logger Logger
 }
 
 // Agent or client
 type Agent struct {
-	// base url
 	base     string
-	handle   HandlerFunc
 	httpc    *http.Client
 	interval time.Duration
 	log      Logger
 }
 
-// New skadi agent instance, you can Start() it later.
-func New(token, server string, handler HandlerFunc, opts *Options) *Agent {
+// New skadi agent instance, you can just use it for sending messages,
+// or StartWorker to handle your command later.
+func New(token, server string, opts *Options) *Agent {
 	// check options
 	base, err := url.Parse(server)
 	if err != nil || base.Host == "" {
@@ -63,9 +61,6 @@ func New(token, server string, handler HandlerFunc, opts *Options) *Agent {
 		if opts.Timeout > 0 {
 			timeout = time.Duration(opts.Timeout) * time.Millisecond
 		}
-		if opts.Interval > 0 {
-			interval = time.Duration(opts.Interval) * time.Millisecond
-		}
 		if opts.Logger != nil {
 			log = opts.Logger
 		}
@@ -74,8 +69,7 @@ func New(token, server string, handler HandlerFunc, opts *Options) *Agent {
 		log = defaultLogger{}
 	}
 	return &Agent{
-		base:   server,
-		handle: handler,
+		base: server,
 		httpc: &http.Client{
 			Transport: customRoundTripper(token),
 			Timeout:   timeout,
@@ -85,15 +79,29 @@ func New(token, server string, handler HandlerFunc, opts *Options) *Agent {
 	}
 }
 
-// Start the agent service,blocked,check job and run it in endless loop.
-func (a *Agent) Start() {
-	for range time.Tick(a.interval) {
-		go a.pullJobAndRun()
+// StartWorker will start the agent worker service,blocked,check job and run it in endless loop.
+// please start it only once per agent, avoid exceed the api limit.
+// ctx: you can use cancelable context for gracefully shutdown worker, or just use context.Background
+// handler: required, handle command message and return result or error
+// interval: optional, job check interval milliseconds, 0 will be default 60000ms(60s)
+func (a *Agent) StartWorker(ctx context.Context, handler HandlerFunc, interval time.Duration) {
+	if interval == 0 {
+		interval = time.Minute
+	}
+	ticker := time.NewTicker(interval)
+LOOP:
+	for {
+		select {
+		case <-ctx.Done():
+			break LOOP
+		case <-ticker.C:
+			a.pullJobAndRun(handler)
+		}
 	}
 }
 
 // async run in loop
-func (a *Agent) pullJobAndRun() {
+func (a *Agent) pullJobAndRun(handler HandlerFunc) {
 	resp, err := a.httpc.Get(a.base + "/agent/job")
 	if err != nil {
 		a.log.Errorf("pull job failed: %s", err)
@@ -121,7 +129,7 @@ func (a *Agent) pullJobAndRun() {
 		a.log.Errorf("invalid body struct when pull job: %s", err)
 		return
 	}
-	result, err := a.handle(job.Message)
+	result, err := handler(job.Message)
 	if err != nil {
 		a.fail(job.ID, err.Error())
 		return
