@@ -30,6 +30,9 @@ type Agent struct {
 
 // New skadi agent instance, you can just use it for sending messages,
 // or StartWorker to handle your command later.
+// token: your agent token
+// server: skadi agent api server, https://github.com/hack-fan/skadi
+// nolint
 func New(token, server string, opts *Options) *Agent {
 	// check options
 	base, err := url.Parse(server)
