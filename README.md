@@ -1,5 +1,9 @@
 # Skadi Go SDK
-Golang sdk for hack-fan/skadi, pull jobs from skadi server.
+[hack-fan/skadi](https://github.com/hack-fan/skadi) is a cloud message center,
+you can send your message/job/command to it by several ways, Slack/Teams/Wechat etc...
+then your agent will get it, do anything you defined, return the result.
+
+This is golang sdk for hack-fan/skadi, pull your jobs from skadi server.
 
 ## Example
 Prepare your `TOKEN` first.
