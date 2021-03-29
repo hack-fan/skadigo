@@ -50,3 +50,31 @@ func (a *Agent) SendWarning(msg string) error {
 	}
 	return nil
 }
+
+func (a *Agent) Info(args ...interface{}) {
+	err := a.SendInfo(fmt.Sprint(args...))
+	if err != nil {
+		a.log.Errorf("skadigo send info failed: %s", err)
+	}
+}
+
+func (a *Agent) Infof(format string, args ...interface{}) {
+	err := a.SendInfo(fmt.Sprintf(format, args...))
+	if err != nil {
+		a.log.Errorf("skadigo send info failed: %s", err)
+	}
+}
+
+func (a *Agent) Warn(args ...interface{}) {
+	err := a.SendWarning(fmt.Sprint(args...))
+	if err != nil {
+		a.log.Errorf("skadigo send info failed: %s", err)
+	}
+}
+
+func (a *Agent) Warnf(format string, args ...interface{}) {
+	err := a.SendWarning(fmt.Sprintf(format, args...))
+	if err != nil {
+		a.log.Errorf("skadigo send info failed: %s", err)
+	}
+}
