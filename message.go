@@ -51,6 +51,27 @@ func (a *Agent) SendWarning(msg string) error {
 	return nil
 }
 
+// SendText send text message to your default IM
+// Warning: If default IM is wechat MP, the message may be discarded when you are not active.
+func (a *Agent) SendText(msg string) error {
+	body, err := json.Marshal(&MessageBody{msg})
+	if err != nil {
+		return fmt.Errorf("marshal failed when send warning: %w", err)
+	}
+	req, err := http.NewRequest("POST", a.base+"/agent/text", bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("new request failed when send warning: %w", err)
+	}
+	resp, err := a.httpc.Do(req)
+	if err != nil {
+		return fmt.Errorf("http failed when send warning: %w", err)
+	}
+	if resp.StatusCode != 201 {
+		return fmt.Errorf("request failed when send warning: %s", resp.Status)
+	}
+	return nil
+}
+
 func (a *Agent) Info(args ...interface{}) {
 	err := a.SendInfo(fmt.Sprint(args...))
 	if err != nil {
