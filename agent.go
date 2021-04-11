@@ -70,7 +70,7 @@ type roundTripper struct {
 	r     http.RoundTripper
 }
 
-// RoundTripper interface
+// RoundTrip RoundTripper interface
 func (rt roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	r.Header.Add("Authorization", "Bearer "+rt.token)
 	r.Header.Add("Content-Type", "application/json")

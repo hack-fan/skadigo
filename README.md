@@ -9,7 +9,7 @@ This is golang sdk for hack-fan/skadi, pull your jobs from skadi server.
 Prepare your `TOKEN` first.
 
 There is several example agent by our team:
-* https://github.com/hack-fan/skadi-agent-shell can run shell command.
+* https://github.com/hack-fan/skadi-agent-shell can run shell commands.
 * https://github.com/hack-fan/skadi-agent-docker can restart docker swarm service.
 
 You can only start one worker per TOKEN.
@@ -19,37 +19,30 @@ package main
 import (
     "context"
     "fmt"
-    "os"
     "os/signal"
     "syscall"
 
     "github.com/hack-fan/skadigo"
 )
 
-func handler(msg string) (string, error) {
-    fmt.Printf("received command message: %s", msg)
+func handler(id,msg string) (string, error) {
+    fmt.Printf("received command message: %s %s", id, msg)
     return msg,nil
 }
 
 func main() {
-    // context
-    ctx, cancel := context.WithCancel(context.Background())
-
     // system signals - for graceful shutdown or restart
-    sig := make(chan os.Signal, 1)
-    signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
-    go func() {
-        <-sig
-        cancel()
-    }()
+    ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+    defer stop()
 
     // skadi agent
     agent := skadigo.New("YOUR-TOKEN", "https://api.letserver.run", nil)
-    agent.StartWorker(ctx, handler, 0)
+    agent.Start(ctx, handler, 0)
 }
 ```
 
 You can use the agent for sending messages anywhere.
+
 ```go
     agent.SendInfo("Hello World")
 ```
