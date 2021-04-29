@@ -17,7 +17,7 @@ func (a *Agent) SendInfo(msg string) error {
 	if err != nil {
 		return fmt.Errorf("marshal failed when send info: %w", err)
 	}
-	req, err := http.NewRequest("POST", a.base+"/agent/info", bytes.NewReader(body))
+	req, err := http.NewRequest("POST", a.base+"/agent/message/info", bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("new request failed when send info: %w", err)
 	}
@@ -37,7 +37,7 @@ func (a *Agent) SendWarning(msg string) error {
 	if err != nil {
 		return fmt.Errorf("marshal failed when send warning: %w", err)
 	}
-	req, err := http.NewRequest("POST", a.base+"/agent/warning", bytes.NewReader(body))
+	req, err := http.NewRequest("POST", a.base+"/agent/message/warning", bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("new request failed when send warning: %w", err)
 	}
@@ -56,18 +56,39 @@ func (a *Agent) SendWarning(msg string) error {
 func (a *Agent) SendText(msg string) error {
 	body, err := json.Marshal(&MessageBody{msg})
 	if err != nil {
-		return fmt.Errorf("marshal failed when send warning: %w", err)
+		return fmt.Errorf("marshal failed when send text: %w", err)
 	}
-	req, err := http.NewRequest("POST", a.base+"/agent/text", bytes.NewReader(body))
+	req, err := http.NewRequest("POST", a.base+"/agent/message/text", bytes.NewReader(body))
 	if err != nil {
-		return fmt.Errorf("new request failed when send warning: %w", err)
+		return fmt.Errorf("new request failed when send text: %w", err)
 	}
 	resp, err := a.httpc.Do(req)
 	if err != nil {
-		return fmt.Errorf("http failed when send warning: %w", err)
+		return fmt.Errorf("http failed when send text: %w", err)
 	}
 	if resp.StatusCode != 201 {
-		return fmt.Errorf("request failed when send warning: %s", resp.Status)
+		return fmt.Errorf("request failed when send text: %s", resp.Status)
+	}
+	return nil
+}
+
+// SendAuto send text message to your default IM
+// If default IM is wechat MP, it will try kf text message first, if failed, try template message.
+func (a *Agent) SendAuto(msg string) error {
+	body, err := json.Marshal(&MessageBody{msg})
+	if err != nil {
+		return fmt.Errorf("marshal failed when send auto: %w", err)
+	}
+	req, err := http.NewRequest("POST", a.base+"/agent/message/auto", bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("new request failed when send auto: %w", err)
+	}
+	resp, err := a.httpc.Do(req)
+	if err != nil {
+		return fmt.Errorf("http failed when send auto: %w", err)
+	}
+	if resp.StatusCode != 201 {
+		return fmt.Errorf("request failed when send auto: %s", resp.Status)
 	}
 	return nil
 }
