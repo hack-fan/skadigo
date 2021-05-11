@@ -27,12 +27,9 @@ func (a *Agent) AddJobToOther(content string) error {
 	if err != nil {
 		return fmt.Errorf("new request failed when add job: %w", err)
 	}
-	resp, err := a.httpc.Do(req)
+	_, err = a.request(req)
 	if err != nil {
 		return fmt.Errorf("http failed when add job: %w", err)
-	}
-	if resp.StatusCode != 201 {
-		return fmt.Errorf("request failed when add job: %s", resp.Status)
 	}
 	return nil
 }
@@ -74,12 +71,9 @@ func (a *Agent) addDelayedJob(dj *delayedJobInput) error {
 	if err != nil {
 		return fmt.Errorf("new request failed when add delayed job: %w", err)
 	}
-	resp, err := a.httpc.Do(req)
+	_, err = a.request(req)
 	if err != nil {
 		return fmt.Errorf("http failed when add delayed job: %w", err)
-	}
-	if resp.StatusCode != 201 {
-		return fmt.Errorf("request failed when add delayed job: %s", resp.Status)
 	}
 	return nil
 }

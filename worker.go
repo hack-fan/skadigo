@@ -112,13 +112,9 @@ func (a *Agent) succeed(id, result string) {
 		a.log.Errorf("invalid request when report job succeeded: %s", err)
 		return
 	}
-	resp, err := a.httpc.Do(req)
+	_, err = a.request(req)
 	if err != nil {
 		a.log.Errorf("request failed when report job succeeded: %s", err)
-		return
-	}
-	if resp.StatusCode != 204 {
-		a.log.Errorf("request failed status when report job succeeded: %s", err)
 		return
 	}
 }
@@ -134,13 +130,9 @@ func (a *Agent) fail(id, result string) {
 		a.log.Errorf("invalid request when report job failed: %s", err)
 		return
 	}
-	resp, err := a.httpc.Do(req)
+	_, err = a.request(req)
 	if err != nil {
 		a.log.Errorf("request failed when report job failed: %s", err)
-		return
-	}
-	if resp.StatusCode != 204 {
-		a.log.Errorf("request failed status when report job failed: %s", err)
 		return
 	}
 }

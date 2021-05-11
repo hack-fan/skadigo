@@ -21,12 +21,9 @@ func (a *Agent) SendInfo(msg string) error {
 	if err != nil {
 		return fmt.Errorf("new request failed when send info: %w", err)
 	}
-	resp, err := a.httpc.Do(req)
+	_, err = a.request(req)
 	if err != nil {
 		return fmt.Errorf("http failed when send info: %w", err)
-	}
-	if resp.StatusCode != 201 {
-		return fmt.Errorf("request failed when send info: %s", resp.Status)
 	}
 	return nil
 }
@@ -41,12 +38,9 @@ func (a *Agent) SendWarning(msg string) error {
 	if err != nil {
 		return fmt.Errorf("new request failed when send warning: %w", err)
 	}
-	resp, err := a.httpc.Do(req)
+	_, err = a.request(req)
 	if err != nil {
 		return fmt.Errorf("http failed when send warning: %w", err)
-	}
-	if resp.StatusCode != 201 {
-		return fmt.Errorf("request failed when send warning: %s", resp.Status)
 	}
 	return nil
 }
@@ -62,12 +56,9 @@ func (a *Agent) SendText(msg string) error {
 	if err != nil {
 		return fmt.Errorf("new request failed when send text: %w", err)
 	}
-	resp, err := a.httpc.Do(req)
+	_, err = a.request(req)
 	if err != nil {
 		return fmt.Errorf("http failed when send text: %w", err)
-	}
-	if resp.StatusCode != 201 {
-		return fmt.Errorf("request failed when send text: %s", resp.Status)
 	}
 	return nil
 }
@@ -83,12 +74,9 @@ func (a *Agent) SendAuto(msg string) error {
 	if err != nil {
 		return fmt.Errorf("new request failed when send auto: %w", err)
 	}
-	resp, err := a.httpc.Do(req)
+	_, err = a.request(req)
 	if err != nil {
 		return fmt.Errorf("http failed when send auto: %w", err)
-	}
-	if resp.StatusCode != 201 {
-		return fmt.Errorf("request failed when send auto: %s", resp.Status)
 	}
 	return nil
 }
