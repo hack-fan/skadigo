@@ -31,11 +31,11 @@ type Handler func(id, msg string) (string, error)
 // please start it only once per agent, avoid exceed the api limit.
 // ctx: you can use cancelable context for gracefully shutdown worker, or just use context.Background
 // handler: required, handle command message and return result or error
-// interval: optional, job check interval milliseconds, 0 will be default 60000ms(60s)
+// interval: optional, job check interval milliseconds, 0 will be default 30000ms(30s)
 // return value will be nil when context canceled, otherwise there will be an error.
 func (a *Agent) Start(ctx context.Context, handler Handler, interval time.Duration) error {
 	if interval == 0 {
-		interval = time.Minute
+		interval = time.Second * 30
 	}
 	ticker := time.NewTicker(interval)
 	for {

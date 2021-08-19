@@ -1,3 +1,3 @@
 module github.com/hack-fan/skadigo
 
-go 1.15
+go 1.16
