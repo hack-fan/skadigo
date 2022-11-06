@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 )
@@ -56,6 +56,16 @@ func (a *Agent) Start(ctx context.Context, handler Handler, interval time.Durati
 	}
 }
 
+// StartAsync is async version of Start, see doc in Start function
+func (a *Agent) StartAsync(ctx context.Context, handler Handler, interval time.Duration) {
+	go func() {
+		err := a.Start(ctx, handler, interval)
+		if err != nil {
+			a.log.Errorf("skadi agent worker start failed: %s", err)
+		}
+	}()
+}
+
 func (a *Agent) check() (*JobBasic, bool, error) {
 	resp, err := a.httpc.Get(a.base + "/agent/job")
 	if err != nil {
@@ -72,7 +82,7 @@ func (a *Agent) check() (*JobBasic, bool, error) {
 		return nil, false, errors.New("invalid token")
 	}
 	// other unique errors
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		a.log.Errorf("read body failed when pull job: %s", err)
 		return nil, false, nil
